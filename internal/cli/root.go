@@ -17,14 +17,21 @@ func Execute() {
 func newRootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "hamunaptra",
-		Short: "Hamunaptra — orchestrate provider CLIs for cost visibility",
-		Long:  "Local CLI that wraps official tools (Vercel, Supabase, Neon, Render, …) to aggregate usage and cost signals.",
+		Short: "Hamunaptra — infra cost CLI + cloud backend",
+		Long:  "Authenticate in the browser, link a project, connect providers, sync, report, and ask questions.",
 	}
 	root.AddCommand(
 		newVersionCmd(),
-		newDoctorCmd(),
+		newLoginCmd(),
+		newLogoutCmd(),
+		newWhoamiCmd(),
+		newInitCmd(),
+		newConnectCmd(),
 		newSyncCmd(),
 		newReportCmd(),
+		newAnomaliesCmd(),
+		newAskCmd(),
+		newDoctorCmd(),
 	)
 	return root
 }

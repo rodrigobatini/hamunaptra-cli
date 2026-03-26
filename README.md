@@ -1,38 +1,37 @@
 # hamunaptra-cli
 
-Hamunaptra command-line tool: orchestrates official provider CLIs (Vercel, Supabase, Neon, Render, …) for local cost and usage visibility.
+Hamunaptra CLI (Go): autenticação no **browser** (device flow), projeto local `hamunaptra.yaml`, conexões de providers, sync, relatórios, anomalias e `ask`.
 
-The marketing site and pricing live in [`hamunaptra`](https://github.com/rodrigobatini/hamunaptra).
+## Config
 
-## Requirements
+- Config file: `~/.config/hamunaptra/config.json` (gravado por `login`).
+- Env: `HAMUNAPTRA_API` (default `http://127.0.0.1:8081`).
 
-- Go 1.22+ (to build from source)
+## Comandos
+
+| Comando | Descrição |
+|---------|-----------|
+| `login` | Inicia fluxo browser; guarda token `ham_…` |
+| `logout` | Remove token local |
+| `whoami` | Chama `GET /v1/me` |
+| `init` | Cria projeto na API + `hamunaptra.yaml` |
+| `connect` | `connect vercel` (regista provider no projeto) |
+| `sync` | Dispara sync demo no servidor |
+| `report` | Série de custos (`--json`, `--from`, `--to`) |
+| `anomalies` | Lista anomalias simples |
+| `ask` | Pergunta (agregados só no backend) |
+| `doctor` | Verifica CLIs locais dos providers |
 
 ## Build
 
 ```bash
 go build -o hamunaptra ./cmd/hamunaptra
-./hamunaptra version
-./hamunaptra doctor
 ```
 
-## Install with Go (when this repo is public)
+## Install (repo público)
 
 ```bash
 go install github.com/rodrigobatini/hamunaptra-cli/cmd/hamunaptra@latest
 ```
 
-## Commands
-
-| Command   | Description                                      |
-|-----------|--------------------------------------------------|
-| `version` | Print version                                   |
-| `doctor`  | Check provider CLIs on PATH                     |
-| `sync`    | Stub — future aggregate sync                    |
-| `report`  | Stub — future report after sync                 |
-
-## Develop
-
-```bash
-go test ./...
-```
+Marketing: [hamunaptra](https://github.com/rodrigobatini/hamunaptra) · API Go: ver repositório/pasta `hamunaptra-server` no workspace.
