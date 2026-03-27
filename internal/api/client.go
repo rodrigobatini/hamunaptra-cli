@@ -156,8 +156,12 @@ func (c *Client) ListProjects() (*ProjectsResp, error) {
 	return &out, nil
 }
 
-func (c *Client) PostConnection(projectID, provider string) error {
-	code, err := c.doJSON(http.MethodPost, "/v1/projects/"+projectID+"/connections", map[string]string{"provider": provider}, nil)
+func (c *Client) PostConnection(projectID, provider, source string) error {
+	payload := map[string]string{"provider": provider}
+	if strings.TrimSpace(source) != "" {
+		payload["source"] = source
+	}
+	code, err := c.doJSON(http.MethodPost, "/v1/projects/"+projectID+"/connections", payload, nil)
 	if err != nil {
 		return err
 	}
@@ -167,8 +171,45 @@ func (c *Client) PostConnection(projectID, provider string) error {
 	return nil
 }
 
-func (c *Client) PostSync(projectID string) error {
-	code, err := c.doJSON(http.MethodPost, "/v1/projects/"+projectID+"/sync", map[string]any{}, nil)
+type Connection struct {
+	ID         string  `json:"id"`
+	Provider   string  `json:"provider"`
+	Status     string  `json:"status"`
+	Source     string  `json:"source"`
+	LastError  *string `json:"last_error,omitempty"`
+	LastSyncAt *string `json:"last_sync_at,omitempty"`
+}
+
+func (c *Client) ListConnections(projectID string) ([]Connection, error) {
+	var out struct {
+		Connections []Connection `json:"connections"`
+	}
+	code, err := c.doJSON(http.MethodGet, "/v1/projects/"+projectID+"/connections", nil, &out)
+	if err != nil {
+		return nil, err
+	}
+	if code >= 300 {
+		return nil, fmt.Errorf("connections: %d", code)
+	}
+	if out.Connections == nil {
+		return []Connection{}, nil
+	}
+	return out.Connections, nil
+}
+
+type SyncSnapshot struct {
+	Date      string         `json:"date"`
+	Provider  string         `json:"provider"`
+	AmountUSD float64        `json:"amount_usd"`
+	Metadata  map[string]any `json:"metadata,omitempty"`
+}
+
+type PostSyncReq struct {
+	Snapshots []SyncSnapshot `json:"snapshots"`
+}
+
+func (c *Client) PostSync(projectID string, req PostSyncReq) error {
+	code, err := c.doJSON(http.MethodPost, "/v1/projects/"+projectID+"/sync", req, nil)
 	if err != nil {
 		return err
 	}

@@ -1,0 +1,35 @@
+{
+  "name": "hamunaptra-cli",
+  "version": "0.1.0",
+  "description": "Hamunaptra CLI launcher for npx/npm users",
+  "bin": {
+    "hamunaptra": "bin/hamunaptra.js"
+  },
+  "files": [
+    "bin",
+    "scripts",
+    "README.md"
+  ],
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rodrigobatini/hamunaptra-cli.git"
+  },
+  "homepage": "https://github.com/rodrigobatini/hamunaptra-cli",
+  "bugs": {
+    "url": "https://github.com/rodrigobatini/hamunaptra-cli/issues"
+  },
+  "keywords": [
+    "cli",
+    "ai",
+    "cost",
+    "hamunaptra"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED"
+}
+

@@ -1,12 +1,15 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/rodrigobatini/hamunaptra-cli/internal/api"
 	"github.com/rodrigobatini/hamunaptra-cli/internal/configfile"
 	"github.com/rodrigobatini/hamunaptra-cli/internal/localproj"
+	"github.com/rodrigobatini/hamunaptra-cli/internal/providers/vercelcli"
 	"github.com/spf13/cobra"
 )
 
@@ -14,7 +17,7 @@ func newSyncCmd() *cobra.Command {
 	var projectID string
 	cmd := &cobra.Command{
 		Use:   "sync",
-		Short: "Trigger backend sync (demo cost data in MVP)",
+		Short: "Collect provider data locally and upload snapshots",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := configfile.Load()
 			if err != nil {
@@ -39,10 +42,48 @@ func newSyncCmd() *cobra.Command {
 				}
 			}
 			c := api.New(base, cfg.AccessToken)
-			if err := c.PostSync(pid); err != nil {
+
+			conns, err := c.ListConnections(pid)
+			if err != nil {
+				return fmt.Errorf("failed to list project connections: %w", err)
+			}
+
+			var hasVercel bool
+			for _, conn := range conns {
+				if strings.EqualFold(conn.Provider, "vercel") {
+					hasVercel = true
+					break
+				}
+			}
+			if !hasVercel {
+				return fmt.Errorf("no vercel connection found; run `hamunaptra connect vercel`")
+			}
+
+			collector := vercelcli.NewCollector()
+			snaps, err := collector.Collect(context.Background())
+			if err != nil {
+				msg := err.Error()
+				if strings.Contains(strings.ToLower(msg), "not found") {
+					msg += "\nInstall Vercel CLI: https://vercel.com/docs/cli"
+				}
+				if strings.Contains(strings.ToLower(msg), "session invalid") {
+					msg += "\nRun: vercel login"
+				}
+				return fmt.Errorf(msg)
+			}
+			payload := api.PostSyncReq{Snapshots: make([]api.SyncSnapshot, 0, len(snaps))}
+			for _, s := range snaps {
+				payload.Snapshots = append(payload.Snapshots, api.SyncSnapshot{
+					Date:      s.Date,
+					Provider:  "vercel",
+					AmountUSD: s.AmountUSD,
+					Metadata:  s.Metadata,
+				})
+			}
+			if err := c.PostSync(pid, payload); err != nil {
 				return err
 			}
-			cmd.Println("Sync complete.")
+			cmd.Printf("Sync complete. Uploaded %d snapshots.\n", len(payload.Snapshots))
 			return nil
 		},
 	}

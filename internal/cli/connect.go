@@ -1,11 +1,14 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/rodrigobatini/hamunaptra-cli/internal/api"
 	"github.com/rodrigobatini/hamunaptra-cli/internal/configfile"
+	"github.com/rodrigobatini/hamunaptra-cli/internal/executil"
 	"github.com/rodrigobatini/hamunaptra-cli/internal/localproj"
 	"github.com/spf13/cobra"
 )
@@ -39,11 +42,29 @@ func newConnectCmd() *cobra.Command {
 					return fmt.Errorf("no project linked; run hamunaptra init or pass --project")
 				}
 			}
+			provider := args[0]
+			if provider == "vercel" {
+				p, err := executil.LookPath("vercel")
+				if err != nil {
+					return fmt.Errorf("vercel cli not found on PATH; install vercel cli and run `vercel login`")
+				}
+				out, errOut, runErr := executil.Run(context.Background(), executil.DefaultTimeout, p, "whoami")
+				if runErr != nil {
+					if errOut == "" {
+						errOut = out
+					}
+					return fmt.Errorf("vercel session not ready (%s); run `vercel login`", strings.TrimSpace(errOut))
+				}
+			}
 			c := api.New(base, cfg.AccessToken)
-			if err := c.PostConnection(pid, args[0]); err != nil {
+			source := "manual"
+			if provider == "vercel" {
+				source = "vercel_cli"
+			}
+			if err := c.PostConnection(pid, provider, source); err != nil {
 				return err
 			}
-			cmd.Println("Connected:", args[0])
+			cmd.Println("Connected:", provider)
 			return nil
 		},
 	}
